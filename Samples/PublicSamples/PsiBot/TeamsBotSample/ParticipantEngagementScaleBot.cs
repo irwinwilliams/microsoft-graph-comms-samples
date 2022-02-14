@@ -90,8 +90,14 @@ namespace Microsoft.Psi.TeamsBot
                 var innerWidth = this.ScreenWidth - (this.FrameMargin * 2);
                 var innerHeight = this.ScreenHeight - (this.FrameMargin * 2);
                 var x = this.FrameMargin;
+                var count = 0;
                 foreach (var participant in participants)
                 {
+                    if (count++ > 1)
+                    {
+                        continue;
+                    }
+
                     // assumes landscape
                     var h =
                         this.varyHeights ?

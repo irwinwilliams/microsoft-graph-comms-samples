@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <CodeAnalysisRuleSet>..\Build\Sample.Psi.ruleset</CodeAnalysisRuleSet>
     <AssemblyName>Microsoft.Psi.TeamsBot.Sample</AssemblyName>
@@ -31,10 +31,11 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.Psi.Imaging.Windows" Version="0.16.92.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Interop" Version="0.16.92.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Media.Windows.x64" Version="0.16.92.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Speech" Version="0.16.92.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Speech.Windows" Version="0.15.49.1-beta" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -42,5 +43,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TeamsBot\TeamsBot.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="SampleGrammar.grxml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

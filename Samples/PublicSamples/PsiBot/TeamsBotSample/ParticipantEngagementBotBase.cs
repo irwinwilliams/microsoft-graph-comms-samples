@@ -11,6 +11,9 @@ namespace Microsoft.Psi.TeamsBot
     using Microsoft.Psi.Audio;
     using Microsoft.Psi.Components;
     using Microsoft.Psi.Imaging;
+    using Microsoft.Psi.Interop;
+    using Microsoft.Psi.Media;
+    using Microsoft.Psi.Speech;
     using PsiImage = Microsoft.Psi.Imaging.Image;
 
     /// <summary>
@@ -45,11 +48,17 @@ namespace Microsoft.Psi.TeamsBot
         private readonly TimeSpan speechWindow = TimeSpan.FromSeconds(5);
         private readonly Bitmap icon;
         private readonly Color backgroundColor = Color.FromArgb(71, 71, 71);
-        private readonly Brush textBrush = Brushes.Black;
+        private readonly Brush textBrush = Brushes.WhiteSmoke;
         private readonly Brush emptyThumbnailBrush = new SolidBrush(Color.FromArgb(30, 30, 30));
         private readonly Brush labelBrush = Brushes.Gray;
-        private readonly Font statusFont = new (FontFamily.GenericSansSerif, 12);
+
+        private readonly Font statusFont = GetFont(); // new (FontFamily., 42);
+
         private readonly Font labelFont = new (FontFamily.GenericSansSerif, 36);
+        private int startX = 200;
+        private int containerY = 100;
+        private int startY = 100;
+        private int decrement = -9;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ParticipantEngagementBotBase"/> class.
@@ -82,6 +91,34 @@ namespace Microsoft.Psi.TeamsBot
                 (participantId, stream) =>
                 {
                     var audioStream = stream.Select(tuple => tuple.Item1);
+                    var appName = "RollCredits";
+
+                    //// Create System.Speech recognizer component
+                    var recognizer = new SystemSpeechRecognizer(
+                       audioStream.Out.Pipeline,
+                       new SystemSpeechRecognizerConfiguration()
+                       {
+                           Language = "en-US",
+                           Grammars = new GrammarInfo[]
+                           {
+                                new GrammarInfo() { Name = appName, FileName = "SampleGrammar.grxml" },
+                           },
+                       });
+
+                    //// Subscribe the recognizer to the input audio
+                    audioStream.PipeTo(recognizer);
+
+                    //// Partial and final speech recognition results are posted on the same stream. Here
+                    //// we use Psi's Where() operator to filter out only the final recognition results.
+                    var finalResults = recognizer.Out.Where(result => result.IsFinal);
+
+                    // Print the final recognition result to the console.
+                    finalResults.Do(result =>
+                    {
+                        this.ROLL_CREDITS = true;
+
+                        // Console.WriteLine($"{result.Text} (confidence: {result.Confidence})");
+                    });
                     var acousticFeatures = audioStream.PipeTo(new AcousticFeaturesExtractor(audioStream.Out.Pipeline));
 
                     // Compute voice activity from the log-energy.
@@ -202,6 +239,11 @@ namespace Microsoft.Psi.TeamsBot
         public Emitter<AudioBuffer> AudioOut { get; } = null;
 
         /// <summary>
+        /// Gets a value indicating whether to trigger to roll credits.
+        /// </summary>
+        public bool ROLL_CREDITS { get; private set; }
+
+        /// <summary>
         /// Gets hilight color used for video frames and other colored elements.
         /// </summary>
         protected Color HighlightColor { get; private set; } = Color.FromArgb(69, 47, 156);
@@ -220,6 +262,19 @@ namespace Microsoft.Psi.TeamsBot
         /// Gets margin within which to render video frame.
         /// </summary>
         protected int FrameMargin { get; private set; }
+
+        /// <summary>
+        /// Find font for status.
+        /// </summary>
+        /// <returns>Status Font.</returns>
+        protected static Font GetFont()
+        {
+            var fontName = "Segoe UI";
+            FontFamily fontFamily = new (fontName);
+            var font = new Font(fontFamily, 42);
+            fontFamily.Dispose();
+            return font;
+        }
 
         /// <summary>
         /// Render participant video frame.
@@ -291,14 +346,88 @@ namespace Microsoft.Psi.TeamsBot
             Graphics graphics = Graphics.FromImage(bitmap);
             graphics.SmoothingMode = SmoothingMode.HighQuality;
             graphics.Clear(this.backgroundColor);
-            graphics.DrawImage(this.icon, 10, this.ScreenHeight - (this.icon.Height / 2) - 10,  this.icon.Width / 2, this.icon.Height / 2);
-            graphics.DrawString($"PsiBot - Powered by \\psi          {DateTime.Now:HH:mm:ss.FFF}", this.statusFont, this.textBrush, new PointF(48, this.ScreenHeight - 32));
-            graphics.DrawString("MEETING IS BEING RECORDED", this.statusFont, Brushes.DarkRed, new PointF(48, 48));
             this.UpdateVisual(participants, graphics);
+            this.Overlay(graphics, participants.First());
             sharedImage.Resource.CopyFrom(bitmap);
             graphics.Dispose();
             bitmap.Dispose();
             emitter?.Post(sharedImage, originatingTime);
+        }
+
+        private void Overlay(Graphics graphics, Participant parti)
+        {
+            if (!this.ROLL_CREDITS)
+            {
+                return;
+            }
+
+            var rectColor = Color.Black;
+            var captionWidth = this.ScreenWidth - 200;
+            var captionHeight = (int)(this.ScreenHeight / 1.5);
+
+            // var startY = 200; // this.ScreenHeight - (this.icon.Height / 2) - 10;
+            // var startX = 100;
+            var alpha = 100;
+            var red = 200;
+            var green = 200;
+            var blue = 200;
+            using (Brush brush = new SolidBrush(Color.FromArgb(alpha, red, green, blue)))
+            {
+                graphics.FillRectangle(brush, this.startX, this.containerY, captionWidth, captionHeight);
+            }
+
+            var headings = new List<string>()
+            {
+                "MEETING THAT COULD HAVE BEEN AN EMAIL",
+                "CAST SUPERVISOR",
+                "VISUAL EFFECTS SUPERVISOR",
+                "DIRECTED BY",
+                "PRODUCED BY",
+            };
+
+            var label = "Irwin ** ";
+            if (!string.IsNullOrEmpty(parti.Label))
+            {
+                label = parti.Label;
+            }
+
+            var contentStrings = new List<string>()
+            {
+                "~",
+                label,
+                label,
+                label,
+                "Mr and Mrs " + label,
+            };
+
+            if (this.startY == -this.ScreenHeight)
+            {
+                this.startY = 100;
+            }
+
+            this.startY += this.decrement;
+
+            for (var i = 0; i < headings.Count; i++)
+            {
+                graphics.DrawString(
+                headings[i],
+                this.statusFont,
+                this.textBrush,
+                new PointF(this.startX, this.startY + (i * 200)));
+
+                graphics.DrawString(
+                contentStrings[i],
+                this.statusFont,
+                this.textBrush,
+                new PointF(this.startX, this.startY + (i * 200) + 100));
+            }
+
+            // graphics.DrawImage(this.icon, 10, this.ScreenHeight - (this.icon.Height / 2) - 10, this.icon.Width / 2, this.icon.Height / 2);
+            // graphics.DrawString(
+            //    $"PsiBot - Powered by \\psi          {DateTime.Now:HH:mm:ss.FFF}",
+            //    this.statusFont,
+            //    this.textBrush,
+            //    new PointF(148, this.ScreenHeight - (this.ScreenHeight / 2)));
         }
 
         /// <summary>

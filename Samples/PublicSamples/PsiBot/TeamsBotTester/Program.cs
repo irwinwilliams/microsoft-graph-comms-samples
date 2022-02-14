@@ -31,7 +31,7 @@ namespace Microsoft.Psi.TeamsBot
         private static PsiImporter OpenStore(Pipeline pipeline)
         {
             // open your recorded bot data store
-            return PsiStore.Open(pipeline, "<insert store name>", "<insert store path>");
+            return PsiStore.Open(pipeline, "CallStore_5e1f6500-ff4c-406f-9e04-35fce4af2825", @"C:\Development\psi-store\");
         }
 
         [STAThread]

@@ -74,7 +74,7 @@ Install [Visual Studio 2019](https://www.visualstudio.com/vs/). The Community Ed
     ```
     to create the wildcard certificate for your domain, e.g., *.mydomain.com.
 
-    2.3 The above command will ask to create a DNS TXT record under the name. Copy the TXT value (do not press enter).
+    2.3 The above command will ask to create a DNS TXT record under the name. Cop   y the TXT value (do not press enter).
 
     2.4. In your App Service Domain, [Create a TXT record](https://docs.microsoft.com/en-us/azure/app-service/app-service-web-tutorial-custom-domain#create-the-cname-record) by specifying:
 
@@ -87,7 +87,7 @@ Install [Visual Studio 2019](https://www.visualstudio.com/vs/). The Community Ed
 
     2.6. Execute:
     ```
-    openssl pkcs12 -export -out <certificate_name>.pfx -inkey <path_to_cert_files>/privkey.pem -in <path_to_cert_files>/cert.pem
+    openssl pkcs12 -export -out cert.pfx -inkey privkey.pem -in fullchain.pem
     ```
     to create a `PKCS#12` format certificate, so that it can be imported into Windows.
 

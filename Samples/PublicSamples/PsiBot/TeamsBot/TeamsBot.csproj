@@ -26,8 +26,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Psi.Audio" Version="0.15.49.1-beta" />
-    <PackageReference Include="Microsoft.Psi.Imaging" Version="0.15.49.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Audio" Version="0.16.92.1-beta" />
+    <PackageReference Include="Microsoft.Psi.CognitiveServices.Speech" Version="0.16.92.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Imaging" Version="0.16.92.1-beta" />
+    <PackageReference Include="Microsoft.Psi.Speech" Version="0.16.92.1-beta" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
