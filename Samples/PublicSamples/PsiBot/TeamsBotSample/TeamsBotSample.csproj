@@ -45,6 +45,9 @@
     <ProjectReference Include="..\TeamsBot\TeamsBot.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <None Update="curb-your-enthusiasm-theme.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="SampleGrammar.grxml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

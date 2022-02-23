@@ -5,6 +5,7 @@ namespace Microsoft.Psi.TeamsBot
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Drawing;
     using System.Drawing.Drawing2D;
     using System.Linq;
@@ -12,6 +13,8 @@ namespace Microsoft.Psi.TeamsBot
     using Microsoft.Psi.Components;
     using Microsoft.Psi.Imaging;
     using Microsoft.Psi.Interop;
+    using Microsoft.Psi.Interop.Format;
+    using Microsoft.Psi.Interop.Transport;
     using Microsoft.Psi.Media;
     using Microsoft.Psi.Speech;
     using PsiImage = Microsoft.Psi.Imaging.Image;
@@ -84,6 +87,10 @@ namespace Microsoft.Psi.TeamsBot
             this.videoInConnector = this.CreateInputConnectorFrom<Dictionary<string, (Shared<PsiImage>, DateTime)>>(pipeline, nameof(this.videoInConnector));
             this.screenShareOutConnector = this.CreateOutputConnectorTo<Shared<PsiImage>>(pipeline, nameof(this.screenShareOutConnector));
 
+            var source = new WaveFileAudioSource(pipeline, "curb-your-enthusiasm-theme.wav");
+            var player = new AudioPlayer(pipeline, new AudioPlayerConfiguration { AudioLevel = 0 });
+            source.PipeTo(player);
+
             // Compute some simple voice activity detection over each participant's audio stream,
             // then aggregate over a window to get a list of timestamps within the window that each
             // person was detected to have been speaking.
@@ -115,7 +122,15 @@ namespace Microsoft.Psi.TeamsBot
                     // Print the final recognition result to the console.
                     finalResults.Do(result =>
                     {
-                        this.ROLL_CREDITS = true;
+                        if (result.Confidence > 0)
+                        {
+                            this.ROLL_CREDITS = true;
+                            player.SetAudioLevel(new Message<double>(1.0, DateTime.Now, DateTime.Now, 1, 1));
+                            player.Start((d) =>
+                            {
+                                Debug.WriteLine(d);
+                            });
+                        }
 
                         // Console.WriteLine($"{result.Text} (confidence: {result.Confidence})");
                     });
@@ -191,6 +206,37 @@ namespace Microsoft.Psi.TeamsBot
                     return aggregate;
                 });
 
+            var encoder = new ImageToJpegStreamEncoder() { QualityLevel = 90 };
+            var simpleVideo = video.Select(dict =>
+            {
+                return dict.Select(kv =>
+                {
+                    var img = kv.Value.Resource.Encode(encoder).GetBuffer();
+                    return (kv.Key, img);
+                }).ToList();
+            });
+
+            var connector = pipeline.CreateConnector<Shared<PsiImage>>("Test");
+
+            var videoWriter = new NetMQWriter<byte[]>(
+                pipeline,
+                "frames",
+                "tcp://127.0.0.1:30000",
+                MessagePackFormat.Instance);
+
+            connector.Out
+                .EncodeJpeg(90, DeliveryPolicy.LatestMessage)
+                .Select(frame => frame.Resource.GetBuffer())
+                .PipeTo(videoWriter);
+
+            // this.QueueWriter = new NetMQWriter<List<(string, byte[])>>(
+            //    pipeline,
+            //    "frames",
+            //    "tcp://127.0.0.1:30000",
+            //    MessagePackFormat.Instance);
+
+            // simpleVideo.PipeTo(this.QueueWriter);
+
             // Generate screen share frames on a regular clock.
             //
             // Note that a best effort is made to sync the video and speech streams with the
@@ -206,6 +252,18 @@ namespace Microsoft.Psi.TeamsBot
                     },
                     DeliveryPolicy.LatestMessage)
                 .PipeTo(this.screenShareOutConnector, DeliveryPolicy.LatestMessage);
+
+            // this.screenShareOutConnector.Out
+            // // .Sample(TimeSpan.FromSeconds(0.2))
+            // .EncodeJpeg(90, DeliveryPolicy.LatestMessage)
+            // .Select(jpg => jpg.Resource.GetBuffer())
+            // .Process<byte[], byte[]>(
+            //    (image, envelope, emitter) =>
+            //    {
+            //        Debug.WriteLine("image: " + image.Length);
+            //    },
+            //    DeliveryPolicy.LatestMessage)
+            // .PipeTo(videoWriter);
         }
 
         /// <inheritdoc/>
@@ -241,7 +299,12 @@ namespace Microsoft.Psi.TeamsBot
         /// <summary>
         /// Gets a value indicating whether to trigger to roll credits.
         /// </summary>
-        public bool ROLL_CREDITS { get; private set; }
+        public bool ROLL_CREDITS { get; private set; } = false;
+
+        /// <summary>
+        /// Gets a writer to NetMQ.
+        /// </summary>
+        public NetMQWriter<List<(string, byte[])>> QueueWriter { get; private set; }
 
         /// <summary>
         /// Gets hilight color used for video frames and other colored elements.
@@ -348,7 +411,9 @@ namespace Microsoft.Psi.TeamsBot
             graphics.Clear(this.backgroundColor);
             this.UpdateVisual(participants, graphics);
             this.Overlay(graphics, participants.First());
+
             sharedImage.Resource.CopyFrom(bitmap);
+
             graphics.Dispose();
             bitmap.Dispose();
             emitter?.Post(sharedImage, originatingTime);

@@ -62,7 +62,7 @@ namespace Microsoft.Psi.TeamsBot
 
             new Thread(new ThreadStart(() =>
             {
-            using (var pipeline = Pipeline.Create())
+            using (var pipeline = Pipeline.Create(enableDiagnostics: true))
             {
                 var store = OpenStore(pipeline);
 
