@@ -17,6 +17,11 @@ namespace PsiBot.Model.Models
         public string JoinURL { get; set; }
 
         /// <summary>
+        /// Gets or sets the Director name for Roll Credits.
+        /// </summary>
+        public string Director { get; set; }
+
+        /// <summary>
         /// Gets or sets the display name.
         /// Teams client does not allow changing of ones own display name.
         /// If display name is specified, we join as anonymous (guest) user

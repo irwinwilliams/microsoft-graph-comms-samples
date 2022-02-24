@@ -58,6 +58,11 @@ namespace Microsoft.Psi.TeamsBot
         Emitter<Shared<Image>> VideoOut { get; }
 
         /// <summary>
+        /// Gets or sets the details about a particular participant.
+        /// </summary>
+        Action<string> GetParticipantDetails { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether to enable audio output.
         /// </summary>
         bool EnableAudioOutput { get; }
@@ -66,5 +71,10 @@ namespace Microsoft.Psi.TeamsBot
         /// Gets the emitter that generates bot audio output.
         /// </summary>
         Emitter<AudioBuffer> AudioOut { get; }
+
+        /// <summary>
+        /// Gets or sets the director for RollCredits.
+        /// </summary>
+        string Director { get; set; }
     }
 }

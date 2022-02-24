@@ -58,9 +58,9 @@ namespace Microsoft.Psi.TeamsBot
         private readonly Font statusFont = GetFont(); // new (FontFamily., 42);
 
         private readonly Font labelFont = new (FontFamily.GenericSansSerif, 36);
-        private int startX = 200;
+        private int startX = 400;
         private int containerY = 100;
-        private int startY = 100;
+        private int startY = 200;
         private int decrement = -9;
 
         /// <summary>
@@ -126,10 +126,17 @@ namespace Microsoft.Psi.TeamsBot
                         {
                             this.ROLL_CREDITS = true;
                             player.SetAudioLevel(new Message<double>(1.0, DateTime.Now, DateTime.Now, 1, 1));
-                            player.Start((d) =>
+                            try
                             {
-                                Debug.WriteLine(d);
-                            });
+                                player.Start((d) =>
+                                {
+                                    Debug.WriteLine(d);
+                                });
+                            }
+                            catch (Exception rc)
+                            {
+                                Debug.WriteLine(rc);
+                            }
                         }
 
                         // Console.WriteLine($"{result.Text} (confidence: {result.Confidence})");
@@ -307,6 +314,16 @@ namespace Microsoft.Psi.TeamsBot
         public NetMQWriter<List<(string, byte[])>> QueueWriter { get; private set; }
 
         /// <summary>
+        /// Gets or sets the participant details.
+        /// </summary>
+        public Action<string> GetParticipantDetails { get; set; }
+
+        /// <summary>
+        /// Gets or sets the director for roll credits.
+        /// </summary>
+        public string Director { get; set; }
+
+        /// <summary>
         /// Gets hilight color used for video frames and other colored elements.
         /// </summary>
         protected Color HighlightColor { get; private set; } = Color.FromArgb(69, 47, 156);
@@ -451,9 +468,9 @@ namespace Microsoft.Psi.TeamsBot
             };
 
             var label = "Irwin ** ";
-            if (!string.IsNullOrEmpty(parti.Label))
+            if (!string.IsNullOrEmpty(this.Director))
             {
-                label = parti.Label;
+                label = this.Director;
             }
 
             var contentStrings = new List<string>()
@@ -462,7 +479,7 @@ namespace Microsoft.Psi.TeamsBot
                 label,
                 label,
                 label,
-                "Mr and Mrs " + label,
+                label,
             };
 
             if (this.startY == -this.ScreenHeight)

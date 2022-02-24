@@ -39,6 +39,11 @@ namespace PsiBot.Services.Bot
         /// </summary>
         /// <value>The bot media stream.</value>
         public BotMediaStream BotMediaStream { get; private set; }
+        
+        /// <summary>
+        /// Gets or sets the director.
+        /// </summary>
+        public string Director { get; private set; }
 
         /// <summary>
         /// MSI when there is no dominant speaker.
@@ -74,9 +79,12 @@ namespace PsiBot.Services.Bot
             : base(TimeSpan.FromMinutes(10), statefulCall?.GraphLogger)
         {
             this.botConfiguration = botConfiguration;
-
             this.pipeline = Pipeline.Create(enableDiagnostics: true);
             this.teamsBot = CreateTeamsBot(this.pipeline);
+            this.teamsBot.GetParticipantDetails = (string id) => {  };
+            this.teamsBot.Director = ""+statefulCall.Resource.AdditionalData["Director"];
+            this.Director = this.teamsBot.Director;
+
             PsiExporter exporter = null;
 
             if (!string.IsNullOrEmpty(botConfiguration.PsiStoreDirectory))
@@ -215,6 +223,10 @@ namespace PsiBot.Services.Bot
         /// <param name="added">if set to <c>true</c> [added].</param>
         private void UpdateParticipants(ICollection<IParticipant> eventArgs, bool added = true)
         {
+            var director = "";
+            
+            director = this.Director;
+            
             foreach (var participant in eventArgs)
             {
                 var json = string.Empty;
@@ -222,9 +234,11 @@ namespace PsiBot.Services.Bot
                 // todo remove the cast with the new graph implementation,
                 // for now we want the bot to only subscribe to "real" participants
                 var participantDetails = participant.Resource.Info.Identity.User;
-
+                
                 if (participantDetails != null)
                 {
+                    //if (string.IsNullOrEmpty(director ) || participantDetails.DisplayName != director) continue;
+
                     json = updateParticipant(this.BotMediaStream.participants, participant, added, participantDetails.DisplayName);
                 }
                 else if (participant.Resource.Info.Identity.AdditionalData?.Count > 0)

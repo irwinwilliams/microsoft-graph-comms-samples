@@ -148,6 +148,7 @@ namespace PsiBot.Services.Bot
             {
                 TenantId = tenantId,
             };
+            joinParams.SetInAdditionalData("Director", joinCallBody.Director);
 
             if (!string.IsNullOrWhiteSpace(joinCallBody.DisplayName))
             {
